@@ -9,7 +9,7 @@
 - Node.js 18.x 以上
 - npm 8.x 以上
 - Claude Desktop (MCP対応版)
-- mGB MIDI シーケンサー WebSocketサーバー ([GitHub: mGB-MIDI-Sequencer](https://github.com/example/mgb-midi-sequencer))
+- mGB MIDI シーケンサー WebSocketサーバー ([GitHub: mGB-MIDI-Sequencer](https://github.com/otanl/mgb-midi-sequencer))
 
 ### インストール
 
@@ -26,6 +26,32 @@ npm run build
 WebSocketサーバーは別のプロジェクト（[mGB-MIDI-Sequencer](https://github.com/example/mgb-midi-sequencer)）から起動する必要があります。セットアップと起動方法については、そのプロジェクトのドキュメントを参照してください。
 
 WebSocketサーバーは `ws://localhost:8765` でリッスンするように設定されています。MCPサーバーはこのアドレスに接続を試みます。
+
+### WebSocketサーバーアドレスの設定
+
+MCPサーバーがWebSocketサーバーに接続するためのアドレスは、以下の方法で設定できます（優先順位順）：
+
+1. **環境変数**:
+   `.env`ファイルまたはシステムの環境変数として`WEBSOCKET_URL`を設定します。
+   例: `WEBSOCKET_URL=ws://192.168.1.100:8765`
+
+2. **設定ファイル**:
+   `config.json`ファイルに`websocketUrl`プロパティを設定します。
+   例:
+   ```json
+   {
+     "websocketUrl": "ws://192.168.1.100:8765"
+   }
+   ```
+
+3. **ログファイルの自動検出**:
+   MCPサーバーは起動時に`app_log.txt`ファイルを自動的に検索し、そこに記録されたWebSocketサーバーアドレスを使用します。以下の場所のファイルを検索します:
+   - カレントディレクトリ
+   - 親ディレクトリ
+   - 親ディレクトリの`mGB-MIDI-Sequencer`フォルダ
+
+4. **デフォルト**:
+   上記の方法で設定が見つからない場合、デフォルトの`ws://localhost:8765`が使用されます。
 
 ### HTMLクライアントの使用
 

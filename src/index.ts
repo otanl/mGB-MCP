@@ -22,6 +22,9 @@ import {
   McpError
 } from "@modelcontextprotocol/sdk/types.js";
 import WebSocket from "ws";
+import fs from "fs";
+import path from "path";
+import dotenv from "dotenv";
 import {
   MgbState,
   WsResponse,
@@ -37,6 +40,9 @@ import {
   isBatchUpdateArgs
 } from "./types.js";
 
+// 環境変数のロード
+dotenv.config();
+
 /**
  * Type alias for a note object.
  */
@@ -51,8 +57,62 @@ const notes: { [id: string]: Note } = {
   "2": { title: "Second Note", content: "This is note 2" }
 };
 
+// WebSocketアドレスを取得する関数
+function getWebSocketAddress(): string {
+  // 方法1: 環境変数から取得
+  if (process.env.WEBSOCKET_URL) {
+    console.error("[MGB MCP] Using WebSocket address from environment variable:", process.env.WEBSOCKET_URL);
+    return process.env.WEBSOCKET_URL;
+  }
+  
+  // 方法2: config.jsonから取得
+  try {
+    const configPath = path.resolve(process.cwd(), "config.json");
+    if (fs.existsSync(configPath)) {
+      const configContent = fs.readFileSync(configPath, 'utf8');
+      const config = JSON.parse(configContent);
+      if (config.websocketUrl) {
+        console.error("[MGB MCP] Using WebSocket address from config.json:", config.websocketUrl);
+        return config.websocketUrl;
+      }
+    }
+  } catch (err) {
+    console.error("[MGB MCP] Error reading config.json:", err);
+  }
+  
+  // 方法3: app_log.txtからアドレスを取得
+  try {
+    // app_log.txtの場所を推測する方法がいくつかあります
+    // 1. カレントディレクトリ
+    // 2. 1レベル上のディレクトリ
+    // 3. 親ディレクトリのmGB-MIDI-Sequencerディレクトリ
+    const possibleLogPaths = [
+      path.resolve(process.cwd(), "app_log.txt"),
+      path.resolve(process.cwd(), "..", "app_log.txt"),
+      path.resolve(process.cwd(), "..", "mGB-MIDI-Sequencer", "app_log.txt")
+    ];
+    
+    for (const logPath of possibleLogPaths) {
+      if (fs.existsSync(logPath)) {
+        const logContent = fs.readFileSync(logPath, 'utf8');
+        const match = logContent.match(/WebSocketサーバー: (ws:\/\/[0-9.]+:[0-9]+)/);
+        if (match && match[1]) {
+          console.error("[MGB MCP] Using WebSocket address from app_log.txt:", match[1]);
+          return match[1];
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[MGB MCP] Error reading app_log.txt:", err);
+  }
+  
+  // デフォルトアドレスに戻る
+  console.error("[MGB MCP] Using default WebSocket address: ws://localhost:8765");
+  return "ws://localhost:8765";
+}
+
 // WebSocketクライアント設定
-const WS_URL = "ws://localhost:8765";
+const WS_URL = getWebSocketAddress();
 let wsClient: WebSocket | null = null;
 let currentState: MgbState | null = null;
 let isConnected = false;
