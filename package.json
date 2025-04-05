@@ -1,0 +1,31 @@
+{
+    "name": "mgb-mcp",
+    "version": "0.1.0",
+    "description": "A Model Context Protocol server",
+    "private": true,
+    "type": "module",
+    "bin": {
+        "mgb-mcp": "./build/index.js"
+    },
+    "files": [
+        "build"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "prepare": "npm run build",
+        "watch": "tsc --watch",
+        "inspector": "npx @modelcontextprotocol/inspector build/index.js",
+        "start-ws": "node build/websocket_server.js"
+    },
+    "dependencies": {
+        "@modelcontextprotocol/sdk": "0.6.0",
+        "axios": "^1.8.4",
+        "dotenv": "^16.4.7",
+        "ws": "^8.18.1"
+    },
+    "devDependencies": {
+        "@types/node": "^20.11.24",
+        "@types/ws": "^8.18.1",
+        "typescript": "^5.3.3"
+    }
+}
