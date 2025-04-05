@@ -25,6 +25,7 @@ import WebSocket from "ws";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
+import os from "os";
 import {
   MgbState,
   WsResponse,
@@ -56,6 +57,30 @@ const notes: { [id: string]: Note } = {
   "1": { title: "First Note", content: "This is note 1" },
   "2": { title: "Second Note", content: "This is note 2" }
 };
+
+/**
+ * システムのローカルIPアドレスを検出
+ * @returns 見つかったIPv4アドレスの配列
+ */
+function getLocalIpAddresses(): string[] {
+  const interfaces = os.networkInterfaces();
+  const addresses: string[] = [];
+
+  // 各ネットワークインターフェースを走査
+  Object.keys(interfaces).forEach(ifaceName => {
+    const iface = interfaces[ifaceName];
+    if (!iface) return;
+
+    // IPv4アドレスのみを抽出（内部ループバックアドレス以外）
+    iface.forEach(details => {
+      if (details.family === 'IPv4' && !details.internal) {
+        addresses.push(details.address);
+      }
+    });
+  });
+
+  return addresses;
+}
 
 // WebSocketアドレスを取得する関数
 function getWebSocketAddress(): string {
@@ -104,6 +129,20 @@ function getWebSocketAddress(): string {
     }
   } catch (err) {
     console.error("[MGB MCP] Error reading app_log.txt:", err);
+  }
+  
+  // 方法4: OSのネットワークインターフェースからIPアドレスを取得して試す
+  try {
+    const localIPs = getLocalIpAddresses();
+    if (localIPs.length > 0) {
+      // 複数のIPアドレスが見つかった場合は最初のものを使用
+      const wsAddress = `ws://${localIPs[0]}:8765`;
+      console.error("[MGB MCP] Using detected local IP address:", wsAddress);
+      console.error("[MGB MCP] Available local IPs:", localIPs.join(", "));
+      return wsAddress;
+    }
+  } catch (err) {
+    console.error("[MGB MCP] Error detecting local IP addresses:", err);
   }
   
   // デフォルトアドレスに戻る
